@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Student from './components/Student';
 import Header from './components/Header';
+import ContactCard from './components/ContactCard';
 
 import './components/styles/global.css'; //Normal CSS
 
@@ -68,7 +69,28 @@ function App() {
           Selected Student: <strong>{selectedStudent}</strong>
         </div>
       )}
+
+      <div> 
+        <h1> Contact List </h1>
+          {/* Local image */}
+        <ContactCard
+          name="Jane Kusi"
+          email="jane@kusi.com"
+          source="local"
+        />
+
+        {/* External image from Pravatar */}
+        <ContactCard
+          name="John Kusi"
+          email="johnhenry@kusi.com"
+          source="external"
+        />
+      </div>
     </div>
+    
+      
+    
+
   );
 }
 
