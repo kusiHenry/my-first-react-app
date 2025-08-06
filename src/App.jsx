@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Student from './components/Student';
 import Header from './components/Header';
 import ContactCard from './components/ContactCard';
 
-import './components/styles/global.css'; //Normal CSS
+import './components/styles/global.css';
 
 function App() {
-  // Array of students with name and age
+  // ================== Students ==================
   const students = [
     { name: "Alice", age: 19 },
     { name: "Bob", age: 22 },
@@ -16,44 +16,127 @@ function App() {
     { name: "Kusi", age: 48 }
   ];
 
-  // Controls how many students to display
   const [count, setCount] = useState(1);
-
-  // State to hold the selected student’s name
   const [selectedStudent, setSelectedStudent] = useState("");
 
-  // Function to show one more student on button click
   const handleShowMore = () => {
     if (count < students.length) {
       setCount(prev => prev + 1);
     }
   };
 
-  // Function to handle student selection from child component
   const onClickStudent = (studentName) => {
     setSelectedStudent(studentName);
   };
+
+  // ================== Contacts ==================
+  const [contacts, setContacts] = useState([
+    {
+      name: "Jane Kusi",
+      email: "jane@kusi.com",
+      phone: "123-456-7890",
+      source: "local"
+    },
+    {
+      name: "John Kusi",
+      email: "johnhenry@kusi.com",
+      phone: "987-654-3210",
+      source: "external"
+    }
+  ]);
+
+  // Form input state
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: ""
+  });
+
+  // Form validation state
+  const [errors, setErrors] = useState({});
+  const nameRef = useRef(null);
+  const emailRef = useRef(null);
+  const phoneRef = useRef(null);
+
+  // Handle input changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Basic validation logic
+  const validate = () => {
+    const newErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required";
+    }
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+      newErrors.email = "Email format is invalid";
+    }
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    }
+
+    return newErrors;
+  };
+
+  // Handle form submission
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const validationErrors = validate();
+    setErrors(validationErrors);
+
+    if (Object.keys(validationErrors).length === 0) {
+      // Add new contact
+      setContacts(prev => [
+        ...prev,
+        {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          source: "external" // or "local" if needed
+        }
+      ]);
+
+      // Reset form
+      setFormData({ name: "", email: "", phone: "" });
+    }
+  };
+
+  // Focus on first invalid field when errors occur
+  useEffect(() => {
+    if (errors.name) {
+      nameRef.current?.focus();
+    } else if (errors.email) {
+      emailRef.current?.focus();
+    } else if (errors.phone) {
+      phoneRef.current?.focus();
+    }
+  }, [errors]);
 
   return (
     <div className="app-container">
       <Header />
 
+      {/* Student List */}
       <ul style={{ listStyle: "none", paddingLeft: 0 }}>
-        {
-          students.slice(0, count).map((student, index) => (
-            <li key={index}>
-              {/* Passing data AND the function down as props */}
-              <Student 
-                name={student.name} 
-                age={student.age} 
-                onSelect={onClickStudent} // descriptive function prop name
-              />
-            </li>
-          ))
-        }
+        {students.slice(0, count).map((student, index) => (
+          <li key={index}>
+            <Student
+              name={student.name}
+              age={student.age}
+              onSelect={onClickStudent}
+            />
+          </li>
+        ))}
       </ul>
 
-      {/* Show more button */}
       {count < students.length && (
         <button
           onClick={handleShowMore}
@@ -63,34 +146,72 @@ function App() {
         </button>
       )}
 
-      {/* Display selected student below the list */}
       {selectedStudent && (
         <div style={{ marginTop: "2rem", fontSize: "1.2rem" }}>
           Selected Student: <strong>{selectedStudent}</strong>
         </div>
       )}
 
-      <div> 
-        <h1> Contact List </h1>
-          {/* Local image */}
-        <ContactCard
-          name="Jane Kusi"
-          email="jane@kusi.com"
-          source="local"
-        />
+      {/* Contact List */}
+      <div style={{ marginTop: "3rem" }}>
+        <h1>Contact List</h1>
+        {contacts.map((contact, index) => (
+          <ContactCard
+            key={index}
+            name={contact.name}
+            email={contact.email}
+            phone={contact.phone}
+            source={contact.source}
+          />
+        ))}
+      </div>
 
-        {/* External image from Pravatar */}
-        <ContactCard
-          name="John Kusi"
-          email="johnhenry@kusi.com"
-          source="external"
-        />
+      {/* Add Contact Form */}
+      <div style={{ marginTop: "3rem" }}>
+        <h2>Add Contact</h2>
+        <form onSubmit={handleSubmit} noValidate>
+          <div>
+            <input
+              type="text"
+              name="name"
+              placeholder="Full Name"
+              value={formData.name}
+              onChange={handleChange}
+              ref={nameRef}
+            />
+            {errors.name && <div style={{ color: 'red' }}>{errors.name}</div>}
+          </div>
+
+          <div>
+            <input
+              type="email"
+              name="email"
+              placeholder="Email Address"
+              value={formData.email}
+              onChange={handleChange}
+              ref={emailRef}
+            />
+            {errors.email && <div style={{ color: 'red' }}>{errors.email}</div>}
+          </div>
+
+          <div>
+            <input
+              type="text"
+              name="phone"
+              placeholder="Phone Number"
+              value={formData.phone}
+              onChange={handleChange}
+              ref={phoneRef}
+            />
+            {errors.phone && <div style={{ color: 'red' }}>{errors.phone}</div>}
+          </div>
+
+          <button type="submit" style={{ marginTop: '1rem', padding: '0.5rem 1rem' }}>
+            Add Contact
+          </button>
+        </form>
       </div>
     </div>
-    
-      
-    
-
   );
 }
 
