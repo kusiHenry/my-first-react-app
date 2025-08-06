@@ -18,6 +18,9 @@ function App() {
 
   const [count, setCount] = useState(1);
   const [selectedStudent, setSelectedStudent] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const errorTimeoutRef = useRef(null);
 
   const handleShowMore = () => {
     if (count < students.length) {
@@ -92,21 +95,34 @@ function App() {
     const validationErrors = validate();
     setErrors(validationErrors);
 
-    if (Object.keys(validationErrors).length === 0) {
-      // Add new contact
-      setContacts(prev => [
-        ...prev,
-        {
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          source: "external" // or "local" if needed
-        }
-      ]);
+    if (Object.keys(validationErrors).length > 0) {
+      // Clear any existing timer
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
 
-      // Reset form
-      setFormData({ name: "", email: "", phone: "" });
+      // Set timer to clear error messages after 5 seconds
+      errorTimeoutRef.current = setTimeout(() => {
+        setErrors({});
+      }, 5000);
+
+      return; // Exit early if there are errors
     }
+
+    // Add new contact
+    setContacts(prev => [
+      ...prev,
+      {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        source: "external"
+      }
+    ]);
+
+    // Reset form
+    setFormData({ name: "", email: "", phone: "" });
+    setErrors({});
   };
 
   // Focus on first invalid field when errors occur
@@ -119,6 +135,10 @@ function App() {
       phoneRef.current?.focus();
     }
   }, [errors]);
+
+  const filteredContacts = contacts.filter(contact =>
+    contact.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="app-container">
@@ -152,10 +172,27 @@ function App() {
         </div>
       )}
 
+      {/* Search Bar */}
+      <div style={{ marginBottom: "1rem" }}>
+        <input
+          type="text"
+          placeholder="Search contacts by name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ padding: "0.5rem", width: "200px" }}
+        />
+        <button
+          onClick={() => setSearchTerm("")}
+          style={{ marginLeft: "0.5rem", padding: "0.5rem" }}
+        >
+          Clear
+        </button>
+      </div>
+
       {/* Contact List */}
       <div style={{ marginTop: "3rem" }}>
         <h1>Contact List</h1>
-        {contacts.map((contact, index) => (
+        {filteredContacts.map((contact, index) => (
           <ContactCard
             key={index}
             name={contact.name}
